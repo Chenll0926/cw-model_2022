@@ -35,6 +35,7 @@ public final class MyGameStateFactory implements Factory<GameState> {
 		private List<Player> detectives;
 		private ImmutableSet<Move> moves;
 		private ImmutableSet<Piece> winner;
+		private ImmutableList<Player> allPlayers; //All players in the game
 
 		//Constructor
 		private MyGameState(final GameSetup setup, final ImmutableSet<Piece> remaining,
@@ -61,18 +62,24 @@ public final class MyGameStateFactory implements Factory<GameState> {
 				if(p.has(ScotlandYard.Ticket.DOUBLE)) throw new IllegalArgumentException("Detective has double ticket!");
 			}
 
+			List<Player> all = new ArrayList<>();
+			all.add(mrX);
+			all.addAll(detectives);
+
 			//Initialisation
 			this.setup = setup;
 			this.remaining = remaining;
 			this.log = log;
 			this.mrX = mrX;
 			this.detectives = detectives;
+			this.allPlayers = ImmutableList.copyOf(all);
 		}
 
 		//Getters
 		@Nonnull @Override public GameSetup getSetup(){
 			return setup;
 		}
+
 		@Nonnull @Override public ImmutableSet<Piece> getPlayers(){
 			Set<Piece> playersSet = new HashSet<>();
 			for(Player p : detectives){
@@ -81,23 +88,34 @@ public final class MyGameStateFactory implements Factory<GameState> {
 			playersSet.add(mrX.piece());
 			return ImmutableSet.copyOf(playersSet);
 		}
+
 		@Nonnull @Override public Optional<Integer> getDetectiveLocation(Detective detective) {
 			for(Player p : detectives){
-				if(p.piece().webColour() == detective.webColour()){
+				if(p.piece().webColour().equals(detective.webColour())){
 					return Optional.of(p.location());
 				}
 			}
 			return Optional.empty();
 		}
+
 		@Nonnull @Override public Optional<TicketBoard> getPlayerTickets(Piece piece){
+			for(Player p : allPlayers){
+				if(p.piece().webColour().equals(piece.webColour())){
+					return Optional.of(ticket -> p.tickets().get(ticket));
+				}
+			}
+
 			return Optional.empty();
 		}
+
 		@Nonnull @Override public ImmutableList<LogEntry> getMrXTravelLog(){
 			return log;
 		}
+
 		@Nonnull @Override public ImmutableSet<Piece> getWinner(){
 			return null;
 		}
+
 		@Nonnull @Override public ImmutableSet<Move> getAvailableMoves(){
 			return null;
 		}
