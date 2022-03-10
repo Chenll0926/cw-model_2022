@@ -117,7 +117,7 @@ public final class MyGameStateFactory implements Factory<GameState> {
 		}
 
 		@Nonnull @Override public ImmutableSet<Move> getAvailableMoves(){
-			return null;
+			return moves;
 		}
 
 		@Nonnull @Override public GameState advance(Move move) {
