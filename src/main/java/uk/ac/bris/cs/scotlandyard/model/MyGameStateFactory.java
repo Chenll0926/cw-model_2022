@@ -6,9 +6,10 @@ import javax.annotation.Nonnull;
 
 import com.google.common.collect.ImmutableSet;
 import uk.ac.bris.cs.scotlandyard.model.Board.GameState;
-import uk.ac.bris.cs.scotlandyard.model.ScotlandYard.Factory;
+import uk.ac.bris.cs.scotlandyard.model.ScotlandYard.*;
 import uk.ac.bris.cs.scotlandyard.model.Move.*;
 import uk.ac.bris.cs.scotlandyard.model.Piece.*;
+import uk.ac.bris.cs.scotlandyard.model.ScotlandYard.Ticket;
 
 import java.util.*;
 
@@ -19,7 +20,8 @@ import java.util.*;
  */
 public final class MyGameStateFactory implements Factory<GameState> {
 
-	@Nonnull @Override public GameState build(
+	@Nonnull @Override
+	public GameState build(
 			GameSetup setup,
 			Player mrX,
 			ImmutableList<Player> detectives) {
@@ -76,11 +78,13 @@ public final class MyGameStateFactory implements Factory<GameState> {
 		}
 
 		//Getters
-		@Nonnull @Override public GameSetup getSetup(){
+		@Nonnull @Override
+		public GameSetup getSetup(){
 			return setup;
 		}
 
-		@Nonnull @Override public ImmutableSet<Piece> getPlayers(){
+		@Nonnull @Override
+		public ImmutableSet<Piece> getPlayers(){
 			Set<Piece> playersSet = new HashSet<>();
 			for(Player p : detectives){
 				playersSet.add(p.piece());
@@ -89,7 +93,8 @@ public final class MyGameStateFactory implements Factory<GameState> {
 			return ImmutableSet.copyOf(playersSet);
 		}
 
-		@Nonnull @Override public Optional<Integer> getDetectiveLocation(Detective detective) {
+		@Nonnull @Override
+		public Optional<Integer> getDetectiveLocation(Detective detective) {
 			for(Player p : detectives){
 				if(p.piece().webColour().equals(detective.webColour())){
 					return Optional.of(p.location());
@@ -98,7 +103,8 @@ public final class MyGameStateFactory implements Factory<GameState> {
 			return Optional.empty();
 		}
 
-		@Nonnull @Override public Optional<TicketBoard> getPlayerTickets(Piece piece){
+		@Nonnull @Override
+		public Optional<TicketBoard> getPlayerTickets(Piece piece){
 			for(Player p : allPlayers){
 				if(p.piece().webColour().equals(piece.webColour())){
 					return Optional.of(ticket -> p.tickets().get(ticket));
@@ -108,24 +114,74 @@ public final class MyGameStateFactory implements Factory<GameState> {
 			return Optional.empty();
 		}
 
-		@Nonnull @Override public ImmutableList<LogEntry> getMrXTravelLog(){
+		@Nonnull @Override
+		public ImmutableList<LogEntry> getMrXTravelLog(){
 			return log;
 		}
 
-		@Nonnull @Override public ImmutableSet<Piece> getWinner(){
-			return null;
+		@Nonnull @Override
+		public ImmutableSet<Piece> getWinner(){
+			return ImmutableSet.of();
 		}
 
-		@Nonnull @Override public ImmutableSet<Move> getAvailableMoves(){
+		@Nonnull @Override
+		public ImmutableSet<Move> getAvailableMoves(){
 			return moves;
 		}
 
-		@Nonnull @Override public GameState advance(Move move) {
+		@Nonnull @Override
+		public GameState advance(Move move) {
 			return null;
 		}
-		@Override public GameState Advance(Move move) {
+		@Override
+		public GameState Advance(Move move) {
 			return null;
 		}
+
+		private ImmutableSet<SingleMove> makeSingleMoves(
+				GameSetup setup,
+				List<Player> detectives,
+				Player player,
+				int source
+		){
+			ArrayList<Integer> detectiveLocations = new ArrayList<>();
+			Set<SingleMove> singleMoves = new HashSet<>();
+
+			//Get the detectives' location
+			for(Player detective : detectives){
+				detectiveLocations.add(detective.location());
+			}
+
+			for(int destination : setup.graph.adjacentNodes(source)){
+				if(!(detectiveLocations.contains(destination))){
+					for(Transport t : setup.graph.edgeValueOrDefault(source, destination, ImmutableSet.of())){
+						if(player.has(t.requiredTicket())){
+							singleMoves.add(new SingleMove(player.piece(), source, t.requiredTicket(), destination));
+						}
+					}
+					if(player.has(Ticket.SECRET)){
+						singleMoves.add(new SingleMove(player.piece(), source, Ticket.SECRET, destination));
+					}
+				}
+			}
+
+			return ImmutableSet.copyOf(singleMoves);
+		}
+	}
+
+	private ImmutableSet<DoubleMove> makeDoubleMove(
+			GameSetup setup,
+			List<Player> detectives,
+			Player player,
+			int source
+	){
+		Set<DoubleMove> doubleMoves = new HashSet<>();
+		return ImmutableSet.copyOf(doubleMoves);
+	}
+
+	public ImmutableSet<Move> getAvailableMoves(){
+		Set<Move> moves = new HashSet<>();
+		return ImmutableSet.copyOf(moves);
 	}
 
 }
