@@ -156,16 +156,10 @@ public final class MyGameStateFactory implements Factory<GameState> {
 			this.moves = getAvailableMoves();
 			if(!moves.contains(move)) throw new IllegalArgumentException("Illegal move: " + move);
 
-//			Piece piece = move.commencedBy();
-//			Player player = pieceToPlayer(piece);
-//
-//			if(player.isMrX()){
-//				updateLog(move);
-//			}
-
 			updateLog(move);
 			updateTickets(move);
 			updateLocation(move);
+			updateRemaining(move);
 
 			return new MyGameState(setup, remaining, log, mrX, detectives);
 		}
@@ -300,15 +294,15 @@ public final class MyGameStateFactory implements Factory<GameState> {
 			return ImmutableList.of();
 		}
 
-//		private Player pieceToPlayer(Piece piece){
-//			for(Player player : allPlayers){
-//
-//				if(player.piece().equals(piece)){
-//					return player;
-//				}
-//			}
-//			return null;
-//		}
+		private Player pieceToPlayer(Piece piece){
+			for(Player player : allPlayers){
+
+				if(player.piece().equals(piece)){
+					return player;
+				}
+			}
+			return null;
+		}
 
 		private void updateLog(Move move){
 			List<LogEntry> newLog = new ArrayList<>(log);
@@ -333,7 +327,7 @@ public final class MyGameStateFactory implements Factory<GameState> {
 
 							isFirst = false;
 						} else {
-							if (setup.moves.get(log.size() + 1)) {
+							if (setup.moves.get(log.size())) {
 								newLog.add(LogEntry.reveal(ticket, getDestination(move)));
 							} else {
 								newLog.add(LogEntry.hidden(ticket));
@@ -393,6 +387,34 @@ public final class MyGameStateFactory implements Factory<GameState> {
 					if(detective.piece().equals(move.commencedBy())){
 						detective = detective.at(destination);
 					}
+				}
+			}
+		}
+
+		private void updateRemaining(Move move){
+			if(move.commencedBy().isMrX()){
+				List<Piece> newRemain = new ArrayList<>();
+
+				for(Player d : detectives){
+					newRemain.add(d.piece());
+				}
+				remaining = ImmutableSet.copyOf(newRemain);
+			}else{
+				List<Piece> remainList = new ArrayList<>(remaining);
+
+				for(Player d : detectives){
+
+					if(d.piece() == move.commencedBy()){
+						remainList.remove(d.piece());
+					}else if(makeSingleMoves(setup, detectives,d, d.location()).isEmpty()){
+						remainList.remove(d.piece());
+					}
+				}
+
+				if(remainList.isEmpty()){
+					remainList.add(mrX.piece());
+				}else{
+					remaining = ImmutableSet.copyOf(remainList);
 				}
 			}
 		}
