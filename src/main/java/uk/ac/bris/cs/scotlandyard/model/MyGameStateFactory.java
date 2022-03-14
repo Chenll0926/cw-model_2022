@@ -156,10 +156,10 @@ public final class MyGameStateFactory implements Factory<GameState> {
 			this.moves = getAvailableMoves();
 			if(!moves.contains(move)) throw new IllegalArgumentException("Illegal move: " + move);
 
+			updateRemaining(move);
 			updateLog(move);
 			updateTickets(move);
 			updateLocation(move);
-			updateRemaining(move);
 
 			return new MyGameState(setup, remaining, log, mrX, detectives);
 		}
@@ -367,7 +367,7 @@ public final class MyGameStateFactory implements Factory<GameState> {
 					for(Player detective : detectives){
 
 						if(detective.piece().equals(move.commencedBy())){
-							detective = detective.use(ticket);
+							//detective = detective.use(ticket);
 							mrX = mrX.give(ticket);
 						}
 					}
@@ -385,7 +385,7 @@ public final class MyGameStateFactory implements Factory<GameState> {
 				for(Player detective : detectives){
 
 					if(detective.piece().equals(move.commencedBy())){
-						detective = detective.at(destination);
+						detective.at(destination);
 					}
 				}
 			}
@@ -401,22 +401,18 @@ public final class MyGameStateFactory implements Factory<GameState> {
 				remaining = ImmutableSet.copyOf(newRemain);
 			}else{
 				List<Piece> remainList = new ArrayList<>(remaining);
+				remainList.remove(move.commencedBy());
 
 				for(Player d : detectives){
 
-					if(d.piece() == move.commencedBy()){
-						remainList.remove(d.piece());
-					}else if(makeSingleMoves(setup, detectives,d, d.location()).isEmpty()){
-						remainList.remove(d.piece());
+					if(makeSingleMoves(setup, detectives, d, d.location()).isEmpty() || remainList.isEmpty()){
+						remainList.clear();
+						remainList.add(mrX.piece());
 					}
 				}
-
-				if(remainList.isEmpty()){
-					remainList.add(mrX.piece());
-				}else{
-					remaining = ImmutableSet.copyOf(remainList);
-				}
+				remaining = ImmutableSet.copyOf(remainList);
 			}
+
 		}
 
 		private boolean isDoubleMove(Move move){
