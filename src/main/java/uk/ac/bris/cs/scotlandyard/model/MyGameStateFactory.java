@@ -123,7 +123,38 @@ public final class MyGameStateFactory implements Factory<GameState> {
 
 		@Nonnull @Override
 		public ImmutableSet<Piece> getWinner(){
-			return ImmutableSet.of();
+			Set<Piece> winners = new HashSet<>();
+			Set<Piece> detectivePieces = new HashSet<>();
+			for(Player d : detectives){
+				detectivePieces.add(d.piece());
+			}
+
+			//Detectives win
+			for(Player d : detectives){ //A detective finish a move on the same station as Mr.X
+				if(d.location() == mrX.location()){
+					winners = detectivePieces;
+					break;
+				}
+			}
+
+			if(makeSingleMoves(setup, detectives, mrX, mrX.location()).isEmpty()
+							&& makeDoubleMove(setup, detectives, mrX, mrX.location()).isEmpty()){ //There are no unoccupied station
+				winners = detectivePieces;                                                        //for Mr.X to travel
+			}
+
+			//Mr.X win
+			if(setup.moves.isEmpty()){ //Mr.X fill the log and there is no rounds for detectives to catch him
+				winners.add(mrX.piece());
+			}
+
+			for(Player d : detectives){
+				if(makeSingleMoves(setup, detectives, d, d.location()).isEmpty()){ //Detectives have no ticket
+					winners.add(mrX.piece());                                      //to move to catch Mr.X
+				}
+			}
+
+
+			return ImmutableSet.copyOf(winners);
 		}
 
 		@Nonnull @Override
@@ -291,7 +322,7 @@ public final class MyGameStateFactory implements Factory<GameState> {
 				}
 			});
 
-			return ImmutableList.of();
+			return tickets;
 		}
 
 		private Player pieceToPlayer(Piece piece){
@@ -327,7 +358,7 @@ public final class MyGameStateFactory implements Factory<GameState> {
 
 							isFirst = false;
 						} else {
-							if (setup.moves.get(log.size())) {
+							if (setup.moves.get(log.size() + 1)) {
 								newLog.add(LogEntry.reveal(ticket, getDestination(move)));
 							} else {
 								newLog.add(LogEntry.hidden(ticket));
@@ -362,16 +393,19 @@ public final class MyGameStateFactory implements Factory<GameState> {
 				}
 			}else{
 
+				List<Player> temp = new ArrayList<>(detectives);
 				for(Ticket ticket : tickets){
 
 					for(Player detective : detectives){
 
 						if(detective.piece().equals(move.commencedBy())){
-							//detective = detective.use(ticket);
+							int indexOfDetective = detectives.indexOf(detective);
+							temp.set(indexOfDetective, detective.use(ticket));
 							mrX = mrX.give(ticket);
 						}
 					}
 				}
+				detectives = temp;
 			}
 		}
 
@@ -382,12 +416,15 @@ public final class MyGameStateFactory implements Factory<GameState> {
 				mrX = mrX.at(destination);
 			}else{
 
+				List<Player> temp = new ArrayList<>(detectives);
 				for(Player detective : detectives){
 
 					if(detective.piece().equals(move.commencedBy())){
-						detective.at(destination);
+						int indexOfDetective = detectives.indexOf(detective);
+						temp.set(indexOfDetective, detective.at(destination));
 					}
 				}
+				detectives = temp;
 			}
 		}
 
