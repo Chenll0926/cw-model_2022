@@ -155,6 +155,18 @@ public final class MyGameStateFactory implements Factory<GameState> {
 		public GameState advance(Move move) {
 			this.moves = getAvailableMoves();
 			if(!moves.contains(move)) throw new IllegalArgumentException("Illegal move: " + move);
+
+//			Piece piece = move.commencedBy();
+//			Player player = pieceToPlayer(piece);
+//
+//			if(player.isMrX()){
+//				updateLog(move);
+//			}
+
+			updateLog(move);
+			updateTickets(move);
+			updateLocation(move);
+
 			return new MyGameState(setup, remaining, log, mrX, detectives);
 		}
 
@@ -236,6 +248,169 @@ public final class MyGameStateFactory implements Factory<GameState> {
 			}
 
 			return isOccupied;
+		}
+
+		//Get the final destination
+		private Integer getDestination(Move move){
+			Integer destination = move.accept(new Visitor<Integer>() {
+				@Override
+				public Integer visit(SingleMove singleMove) {
+					return singleMove.destination;
+				}
+
+				@Override
+				public Integer visit(DoubleMove doubleMove) {
+					return doubleMove.destination2;
+				}
+			});
+
+			return destination;
+		}
+
+		//As double move has destination1 and destination2, this method is to get destination1
+		private Integer getMiddleDestination(Move move){
+			Integer destination1 = move.accept(new Visitor<Integer>() {
+				@Override
+				public Integer visit(SingleMove singleMove) {
+					return -1;
+				}
+
+				@Override
+				public Integer visit(DoubleMove doubleMove) {
+					return doubleMove.destination1;
+				}
+			});
+
+			return destination1;
+		}
+
+		private ImmutableList<Ticket> getTickets(Move move){
+			ImmutableList<Ticket> tickets = move.accept(new Visitor<ImmutableList<Ticket>>() {
+				@Override
+				public ImmutableList<Ticket> visit(SingleMove move) {
+					return ImmutableList.copyOf(move.tickets());
+				}
+
+				@Override
+				public ImmutableList<Ticket> visit(DoubleMove move) {
+					return ImmutableList.copyOf(move.tickets());
+				}
+			});
+
+			return ImmutableList.of();
+		}
+
+//		private Player pieceToPlayer(Piece piece){
+//			for(Player player : allPlayers){
+//
+//				if(player.piece().equals(piece)){
+//					return player;
+//				}
+//			}
+//			return null;
+//		}
+
+		private void updateLog(Move move){
+			List<LogEntry> newLog = new ArrayList<>(log);
+
+			//Only MrX needs to update log
+			if(move.commencedBy().isMrX()){
+
+				if (isDoubleMove(move)) {
+
+					//Double move update log
+					Boolean isFirst = true;
+					for (Ticket ticket : move.tickets()) {
+
+						if (ticket == Ticket.DOUBLE) continue;
+						if (isFirst) {
+
+							if (setup.moves.get(log.size())) {
+								newLog.add(LogEntry.reveal(ticket, getMiddleDestination(move)));
+							} else {
+								newLog.add(LogEntry.hidden(ticket));
+							}
+
+							isFirst = false;
+						} else {
+							if (setup.moves.get(log.size() + 1)) {
+								newLog.add(LogEntry.reveal(ticket, getDestination(move)));
+							} else {
+								newLog.add(LogEntry.hidden(ticket));
+							}
+						}
+
+					}
+				} else {
+
+					//Single move update log
+					for (Ticket ticket : move.tickets()) {
+						if (setup.moves.get(log.size())) {
+							newLog.add(LogEntry.reveal(ticket, getDestination(move)));
+						} else {
+							newLog.add(LogEntry.hidden(ticket));
+						}
+					}
+				}
+			}
+			this.log = ImmutableList.copyOf(newLog);
+		}
+
+		private void updateTickets(Move move){
+			ImmutableList<Ticket> tickets = getTickets(move);
+
+			if(move.commencedBy().isMrX()){
+
+				for(Ticket ticket : tickets){
+
+					//Take the used ticket(s) away from MrX
+					mrX = mrX.use(ticket);
+				}
+			}else{
+
+				for(Ticket ticket : tickets){
+
+					for(Player detective : detectives){
+
+						if(detective.piece().equals(move.commencedBy())){
+							detective = detective.use(ticket);
+							mrX = mrX.give(ticket);
+						}
+					}
+				}
+			}
+		}
+
+		private void updateLocation(Move move){
+			Integer destination = getDestination(move);
+
+			if(move.commencedBy().isMrX()){
+				mrX = mrX.at(destination);
+			}else{
+
+				for(Player detective : detectives){
+
+					if(detective.piece().equals(move.commencedBy())){
+						detective = detective.at(destination);
+					}
+				}
+			}
+		}
+
+		private boolean isDoubleMove(Move move){
+			Boolean isDouble = move.accept(new Visitor<Boolean>() {
+				@Override
+				public Boolean visit(SingleMove move) {
+					return false;
+				}
+
+				@Override
+				public Boolean visit(DoubleMove move) {
+					return true;
+				}
+			});
+
+			return isDouble;
 		}
 
 	}
