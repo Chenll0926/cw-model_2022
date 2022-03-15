@@ -76,6 +76,7 @@ public final class MyGameStateFactory implements Factory<GameState> {
 			this.mrX = mrX;
 			this.detectives = detectives;
 			this.allPlayers = ImmutableList.copyOf(all);
+
 		}
 
 		//Getters
@@ -147,10 +148,16 @@ public final class MyGameStateFactory implements Factory<GameState> {
 				winners.add(mrX.piece());
 			}
 
+			Set<Piece> detectivesCannotMove = new HashSet<>();
 			for(Player d : detectives){
 				if(makeSingleMoves(setup, detectives, d, d.location()).isEmpty()){ //Detectives have no ticket
-					winners.add(mrX.piece());                                      //to move to catch Mr.X
+					detectivesCannotMove.add(d.piece());                           //to move to catch Mr.X
+
 				}
+			}
+			if(detectivesCannotMove.equals(detectivePieces)){
+				winners.add(mrX.piece());
+				this.remaining = ImmutableSet.of();
 			}
 
 
@@ -178,7 +185,9 @@ public final class MyGameStateFactory implements Factory<GameState> {
 					}
 				}
 			}
+
 			return ImmutableSet.copyOf(moves);
+
 		}
 
 		//Methods
@@ -229,13 +238,12 @@ public final class MyGameStateFactory implements Factory<GameState> {
 				int source
 		){
 			Set<DoubleMove> doubleMoves = new HashSet<>();
-			var firstSingleMove = makeSingleMoves(setup, detectives, player, source);
-			int destination1;
+			ImmutableSet<SingleMove> firstSingleMove = makeSingleMoves(setup, detectives, player, source);
 
 			if(player.has(Ticket.DOUBLE) && this.setup.moves.size() > 1){
 					for(SingleMove move1 : firstSingleMove){
 
-						var secondSingleMove = makeSingleMoves(
+						ImmutableSet<SingleMove> secondSingleMove = makeSingleMoves(
 								setup, detectives,
 								player, move1.destination);
 
@@ -256,9 +264,9 @@ public final class MyGameStateFactory implements Factory<GameState> {
 			return ImmutableSet.copyOf(doubleMoves);
 		}
 
-		private Boolean isOccupied(Player player, List<Player> detectives, int destination){
+		private boolean isOccupied(Player player, List<Player> detectives, int destination){
 			ArrayList<Integer> locations = new ArrayList<>();
-			Boolean isOccupied = false;
+			boolean isOccupied = false;
 
 			for(Player detective : detectives){
 				if(detective != player){
@@ -269,6 +277,7 @@ public final class MyGameStateFactory implements Factory<GameState> {
 			for(int location : locations){
 				if(location == destination){
 					isOccupied = true;
+					break;
 				}
 			}
 
@@ -277,7 +286,7 @@ public final class MyGameStateFactory implements Factory<GameState> {
 
 		//Get the final destination
 		private Integer getDestination(Move move){
-			Integer destination = move.accept(new Visitor<Integer>() {
+			return move.accept(new Visitor<>() {
 				@Override
 				public Integer visit(SingleMove singleMove) {
 					return singleMove.destination;
@@ -288,13 +297,11 @@ public final class MyGameStateFactory implements Factory<GameState> {
 					return doubleMove.destination2;
 				}
 			});
-
-			return destination;
 		}
 
 		//As double move has destination1 and destination2, this method is to get destination1
 		private Integer getMiddleDestination(Move move){
-			Integer destination1 = move.accept(new Visitor<Integer>() {
+			return move.accept(new Visitor<>() {
 				@Override
 				public Integer visit(SingleMove singleMove) {
 					return -1;
@@ -305,34 +312,20 @@ public final class MyGameStateFactory implements Factory<GameState> {
 					return doubleMove.destination1;
 				}
 			});
-
-			return destination1;
 		}
 
 		private ImmutableList<Ticket> getTickets(Move move){
-			ImmutableList<Ticket> tickets = move.accept(new Visitor<ImmutableList<Ticket>>() {
+			return move.accept(new Visitor<>() {
 				@Override
-				public ImmutableList<Ticket> visit(SingleMove move) {
-					return ImmutableList.copyOf(move.tickets());
+				public ImmutableList<Ticket> visit(SingleMove move1) {
+					return ImmutableList.copyOf(move1.tickets());
 				}
 
 				@Override
-				public ImmutableList<Ticket> visit(DoubleMove move) {
-					return ImmutableList.copyOf(move.tickets());
+				public ImmutableList<Ticket> visit(DoubleMove move1) {
+					return ImmutableList.copyOf(move1.tickets());
 				}
 			});
-
-			return tickets;
-		}
-
-		private Player pieceToPlayer(Piece piece){
-			for(Player player : allPlayers){
-
-				if(player.piece().equals(piece)){
-					return player;
-				}
-			}
-			return null;
 		}
 
 		private void updateLog(Move move){
@@ -344,7 +337,7 @@ public final class MyGameStateFactory implements Factory<GameState> {
 				if (isDoubleMove(move)) {
 
 					//Double move update log
-					Boolean isFirst = true;
+					boolean isFirst = true;
 					for (Ticket ticket : move.tickets()) {
 
 						if (ticket == Ticket.DOUBLE) continue;
@@ -453,19 +446,17 @@ public final class MyGameStateFactory implements Factory<GameState> {
 		}
 
 		private boolean isDoubleMove(Move move){
-			Boolean isDouble = move.accept(new Visitor<Boolean>() {
+			return move.accept(new Visitor<>() {
 				@Override
-				public Boolean visit(SingleMove move) {
+				public Boolean visit(SingleMove move1) {
 					return false;
 				}
 
 				@Override
-				public Boolean visit(DoubleMove move) {
+				public Boolean visit(DoubleMove move1) {
 					return true;
 				}
 			});
-
-			return isDouble;
 		}
 
 	}
