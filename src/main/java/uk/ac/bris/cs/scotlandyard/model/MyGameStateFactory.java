@@ -152,11 +152,13 @@ public final class MyGameStateFactory implements Factory<GameState> {
 			for(Player d : detectives){
 				if(makeSingleMoves(setup, detectives, d, d.location()).isEmpty()){ //Detectives have no ticket
 					detectivesCannotMove.add(d.piece());                           //to move to catch Mr.X
-
 				}
 			}
 			if(detectivesCannotMove.equals(detectivePieces)){
 				winners.add(mrX.piece());
+			}
+
+			if(!winners.isEmpty()){
 				this.remaining = ImmutableSet.of();
 			}
 
@@ -169,8 +171,6 @@ public final class MyGameStateFactory implements Factory<GameState> {
 			Set<Move> moves = new HashSet<>();
 			if(remaining.contains(mrX.piece())){
 
-//				Set<SingleMove> singleMoves = new HashSet<>(makeSingleMoves(setup, detectives, mrX, mrX.location()));
-//				Set<DoubleMove> doubleMoves = new HashSet<>(makeDoubleMove(setup, detectives, mrX, mrX.location()));
 				moves.addAll(makeSingleMoves(setup, detectives, mrX, mrX.location()));
 				moves.addAll(makeDoubleMove(setup, detectives, mrX, mrX.location()));
 			}else{
@@ -179,9 +179,7 @@ public final class MyGameStateFactory implements Factory<GameState> {
 
 					if(remaining.contains(detective.piece())){
 
-						ImmutableSet<SingleMove> singleMoves = makeSingleMoves(
-								setup, detectives, detective, detective.location());
-						moves.addAll(singleMoves);
+						moves.addAll(makeSingleMoves(setup, detectives, detective, detective.location()));
 					}
 				}
 			}
@@ -317,13 +315,13 @@ public final class MyGameStateFactory implements Factory<GameState> {
 		private ImmutableList<Ticket> getTickets(Move move){
 			return move.accept(new Visitor<>() {
 				@Override
-				public ImmutableList<Ticket> visit(SingleMove move1) {
-					return ImmutableList.copyOf(move1.tickets());
+				public ImmutableList<Ticket> visit(SingleMove singleMove) {
+					return ImmutableList.copyOf(singleMove.tickets());
 				}
 
 				@Override
-				public ImmutableList<Ticket> visit(DoubleMove move1) {
-					return ImmutableList.copyOf(move1.tickets());
+				public ImmutableList<Ticket> visit(DoubleMove doubleMove) {
+					return ImmutableList.copyOf(doubleMove.tickets());
 				}
 			});
 		}
