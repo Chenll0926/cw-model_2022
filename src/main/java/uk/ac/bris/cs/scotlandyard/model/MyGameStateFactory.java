@@ -144,7 +144,7 @@ public final class MyGameStateFactory implements Factory<GameState> {
 			}
 
 			//Mr.X win
-			if(setup.moves.isEmpty()){ //Mr.X fill the log and there is no rounds for detectives to catch him
+			if(setup.moves.size() == log.size()){ //Mr.X fill the log and there is no rounds for detectives to catch him
 				winners.add(mrX.piece());
 			}
 
@@ -161,7 +161,6 @@ public final class MyGameStateFactory implements Factory<GameState> {
 			if(!winners.isEmpty()){
 				this.remaining = ImmutableSet.of();
 			}
-
 
 			return ImmutableSet.copyOf(winners);
 		}
@@ -420,27 +419,37 @@ public final class MyGameStateFactory implements Factory<GameState> {
 		}
 
 		private void updateRemaining(Move move){
-			if(move.commencedBy().isMrX()){
-				List<Piece> newRemain = new ArrayList<>();
-
-				for(Player d : detectives){
-					newRemain.add(d.piece());
-				}
-				remaining = ImmutableSet.copyOf(newRemain);
-			}else{
-				List<Piece> remainList = new ArrayList<>(remaining);
-				remainList.remove(move.commencedBy());
-
-				for(Player d : detectives){
-
-					if(makeSingleMoves(setup, detectives, d, d.location()).isEmpty() || remainList.isEmpty()){
-						remainList.clear();
-						remainList.add(mrX.piece());
-					}
-				}
-				remaining = ImmutableSet.copyOf(remainList);
+			List<Piece> newRemaining;
+			List<Piece> remainingList = new ArrayList<>(remaining);
+			List<Piece> detectivePieces = new ArrayList<>();
+			for(Player d : detectives){
+				detectivePieces.add(d.piece());
 			}
 
+			if(move.commencedBy().isMrX()){
+				newRemaining = detectivePieces;
+			}else{
+				remainingList.remove(move.commencedBy());
+				newRemaining = remainingList;
+			}
+
+			boolean isAllDetectivesCannotMove = false;
+			List<Piece> detectivesCannotMove = new ArrayList<>();
+			for(Player d : detectives){
+				if(makeSingleMoves(setup, detectives, d, d.location()).isEmpty()){
+					detectivesCannotMove.add(d.piece());
+				}
+			}
+
+			if(detectivesCannotMove.equals(remainingList)){
+				isAllDetectivesCannotMove = true;
+			}
+
+			if(remainingList.isEmpty() || isAllDetectivesCannotMove){
+				remaining = ImmutableSet.of(mrX.piece());
+			}else{
+				remaining = ImmutableSet.copyOf(newRemaining);
+			}
 		}
 
 		private boolean isDoubleMove(Move move){
