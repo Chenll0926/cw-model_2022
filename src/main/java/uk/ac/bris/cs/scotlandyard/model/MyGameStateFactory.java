@@ -201,6 +201,19 @@ public final class MyGameStateFactory implements Factory<GameState> {
 			return new MyGameState(setup, remaining, log, mrX, detectives);
 		}
 
+		@Override
+		public GameState Advance(Move move) {
+			this.moves = getAvailableMoves();
+			if(!moves.contains(move)) throw new IllegalArgumentException("Illegal move: " + move);
+
+			updateRemaining(move);
+			updateLog(move);
+			updateTickets(move);
+			updateLocation(move);
+
+			return new MyGameState(setup, remaining, log, mrX, detectives);
+		}
+
 		public ImmutableSet<SingleMove> makeSingleMoves(
 				GameSetup setup,
 				List<Player> detectives,
