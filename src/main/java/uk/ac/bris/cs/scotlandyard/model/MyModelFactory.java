@@ -18,52 +18,6 @@ public final class MyModelFactory implements Factory<Model> {
 	@Nonnull @Override public Model build(GameSetup setup,
 	                                      Player mrX,
 	                                      ImmutableList<Player> detectives) {
-//		return new Model() {
-//			MyGameStateFactory factory = new MyGameStateFactory();
-//			Board.GameState state = factory.build(setup, mrX, detectives);
-//			Set<Observer> observerSet = new HashSet<>();
-//			@Nonnull
-//			@Override
-//			public Board getCurrentBoard() {
-//				return state;
-//			}
-//
-//			@Override
-//			public void registerObserver(@Nonnull Observer observer) {
-//				if(observer == null) throw new NullPointerException();
-//				if(observerSet.contains(observer)) throw new IllegalArgumentException();
-//				observerSet.add(observer);
-//			}
-//
-//			@Override
-//			public void unregisterObserver(@Nonnull Observer observer) {
-//				if(observer == null) throw new NullPointerException();
-//				if(!observerSet.contains(observer)) throw new IllegalArgumentException();
-//				observerSet.remove(observer);
-//			}
-//
-//			@Nonnull
-//			@Override
-//			public ImmutableSet<Observer> getObservers() {
-//				return ImmutableSet.copyOf(observerSet);
-//			}
-//
-//			@Override
-//			public void chooseMove(@Nonnull Move move) {
-//				state = state.advance(move);
-//				Observer.Event event;
-//
-//				if(state.getWinner().isEmpty()){
-//					event = Observer.Event.MOVE_MADE;
-//				}else{
-//					event = Observer.Event.GAME_OVER;
-//				}
-//
-//				for(Observer observer : observerSet){
-//					observer.onModelChanged(state, event);
-//				}
-//			}
-//		};
 		return new Model() {
 			MyGameStateFactory myFactory = new MyGameStateFactory();
 
