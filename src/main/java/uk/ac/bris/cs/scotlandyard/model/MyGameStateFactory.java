@@ -45,15 +45,14 @@ public final class MyGameStateFactory implements Factory<GameState> {
 							final List<Player> detectives){
 			//Check parameters are not null
 			if(setup.moves.isEmpty()) throw new IllegalArgumentException("Moves is empty!");
-			if(remaining.isEmpty()) throw new IllegalArgumentException("Remaining is empty!");
-			if(mrX.isDetective()) throw new IllegalArgumentException("MrX is empty!");
+			if(!mrX.isMrX()) throw new IllegalArgumentException("MrX is not MrX!");
 			if(detectives.isEmpty()) throw new IllegalArgumentException("Detectives is empty!");
 			if(setup.graph.nodes().isEmpty()) throw new IllegalArgumentException("Graph is empty!");
 
 			List<Player> copyDetectives = new ArrayList<>();
 			List<Integer> copyDetectivesLocation = new ArrayList<>();
 			for(Player p : detectives){
-				if(p.isMrX()) throw new IllegalArgumentException("Detective is MrX!");
+				if(!p.isDetective()) throw new IllegalArgumentException("Detective is not detective!");
 				if(copyDetectives.contains(p)) throw new IllegalArgumentException("Duplicate detective!");
 				if(copyDetectivesLocation.contains(p.location())) throw new IllegalArgumentException("Location is overlap!");
 
@@ -144,8 +143,9 @@ public final class MyGameStateFactory implements Factory<GameState> {
 			}
 
 			//Mr.X win
-			if(setup.moves.size() == log.size()){ //Mr.X fill the log and there is no rounds for detectives to catch him
-				winners.add(mrX.piece());
+			if(setup.moves.size() == log.size()
+					&& remaining.contains(mrX.piece())){ //Mr.X fill the log
+				winners.add(mrX.piece());                //and there is no rounds for detectives to catch Mr.X
 			}
 
 			Set<Piece> detectivesCannotMove = new HashSet<>();
@@ -193,10 +193,10 @@ public final class MyGameStateFactory implements Factory<GameState> {
 			this.moves = getAvailableMoves();
 			if(!moves.contains(move)) throw new IllegalArgumentException("Illegal move: " + move);
 
-			updateRemaining(move);
 			updateLog(move);
 			updateTickets(move);
 			updateLocation(move);
+			updateRemaining(move);
 
 			return new MyGameState(setup, remaining, log, mrX, detectives);
 		}
@@ -206,10 +206,10 @@ public final class MyGameStateFactory implements Factory<GameState> {
 			this.moves = getAvailableMoves();
 			if(!moves.contains(move)) throw new IllegalArgumentException("Illegal move: " + move);
 
-			updateRemaining(move);
 			updateLog(move);
 			updateTickets(move);
 			updateLocation(move);
+			updateRemaining(move);
 
 			return new MyGameState(setup, remaining, log, mrX, detectives);
 		}
@@ -434,35 +434,36 @@ public final class MyGameStateFactory implements Factory<GameState> {
 		private void updateRemaining(Move move){
 			List<Piece> newRemaining;
 			List<Piece> remainingList = new ArrayList<>(remaining);
+			Piece currentPlayer = move.commencedBy();
 			List<Piece> detectivePieces = new ArrayList<>();
 			for(Player d : detectives){
 				detectivePieces.add(d.piece());
 			}
 
-			if(move.commencedBy().isMrX()){
+			if(currentPlayer == mrX.piece()){
 				newRemaining = detectivePieces;
 			}else{
 				remainingList.remove(move.commencedBy());
 				newRemaining = remainingList;
 			}
 
-			boolean isAllDetectivesCannotMove = false;
+			boolean isAllDetectivesCannotMove;
 			List<Piece> detectivesCannotMove = new ArrayList<>();
-			for(Player d : detectives){
-				if(makeSingleMoves(setup, detectives, d, d.location()).isEmpty()){
-					detectivesCannotMove.add(d.piece());
+			for(Player p : detectives){
+				if(makeSingleMoves(setup, detectives, p, p.location()).isEmpty()){
+					detectivesCannotMove.add(p.piece());
 				}
 			}
+			isAllDetectivesCannotMove = detectivesCannotMove.equals(remainingList);
 
-			if(detectivesCannotMove.equals(remainingList)){
-				isAllDetectivesCannotMove = true;
+			if(!newRemaining.isEmpty() && isAllDetectivesCannotMove){
+				newRemaining.clear();
+				newRemaining.add(mrX.piece());
 			}
-
-			if(remainingList.isEmpty() || isAllDetectivesCannotMove){
-				remaining = ImmutableSet.of(mrX.piece());
-			}else{
-				remaining = ImmutableSet.copyOf(newRemaining);
+			if(newRemaining.isEmpty()){
+				newRemaining.add(mrX.piece());
 			}
+			this.remaining = ImmutableSet.copyOf(newRemaining);
 		}
 
 		private boolean isDoubleMove(Move move){
