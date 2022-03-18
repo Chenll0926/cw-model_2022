@@ -75,7 +75,7 @@ public interface Board {
 		 */
 		@Nonnull GameState advance(Move move);
 
-		GameState Advance(Move move);
+		//GameState Advance(Move move);
 	}
 
 
