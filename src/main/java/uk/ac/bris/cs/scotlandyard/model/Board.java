@@ -74,8 +74,6 @@ public interface Board {
 		 * {@link #getAvailableMoves()}
 		 */
 		@Nonnull GameState advance(Move move);
-
-		//GameState Advance(Move move);
 	}
 
 
