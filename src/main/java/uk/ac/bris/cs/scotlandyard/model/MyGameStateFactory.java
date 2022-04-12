@@ -70,7 +70,7 @@ public final class MyGameStateFactory implements Factory<GameState> {
 
 			//Initialisation
 			this.setup = setup;
-			this.remaining = remaining; //The players still in the game
+			this.remaining = remaining;
 			this.log = log;
 			this.mrX = mrX;
 			this.detectives = detectives;
@@ -197,7 +197,7 @@ public final class MyGameStateFactory implements Factory<GameState> {
 
 				for(Player detective : detectives){
 
-					if(!remaining.contains(detective.piece())) continue; //The detectives move list is equal to the remaining list
+					if(!remaining.contains(detective.piece())) continue; //The players in detectives move list is equal to the remaining list
 					moves.addAll(makeSingleMoves(setup, detectives, detective, detective.location()));
 				}
 			}
@@ -242,6 +242,7 @@ public final class MyGameStateFactory implements Factory<GameState> {
 			Set<DoubleMove> doubleMoves = new HashSet<>();
 			ImmutableSet<SingleMove> firstSingleMove = makeSingleMoves(setup, detectives, player, source);
 
+			//Make once double move can be thought as make twice single move
 			if(player.has(Ticket.DOUBLE) && this.setup.moves.size() > 1){
 
 					for(SingleMove move1 : firstSingleMove){
@@ -267,6 +268,7 @@ public final class MyGameStateFactory implements Factory<GameState> {
 			return ImmutableSet.copyOf(doubleMoves);
 		}
 
+		//Check whether the node is occupied by a detective
 		private boolean isOccupied(Player player, List<Player> detectives, int destination){
 			ArrayList<Integer> locations = new ArrayList<>();
 			boolean isOccupied = false;
@@ -289,7 +291,7 @@ public final class MyGameStateFactory implements Factory<GameState> {
 			return isOccupied;
 		}
 
-		//Get the final destination
+		//Get the final destination by using visitor
 		private Integer getDestination(Move move){
 			return move.accept(new Visitor<>() {
 				@Override
@@ -319,6 +321,7 @@ public final class MyGameStateFactory implements Factory<GameState> {
 			});
 		}
 
+		//Get the tickets can be used in this move
 		private ImmutableList<Ticket> getTickets(Move move){
 			return move.accept(new Visitor<>() {
 				@Override
@@ -333,6 +336,7 @@ public final class MyGameStateFactory implements Factory<GameState> {
 			});
 		}
 
+		//Update log for mrx moves
 		private void updateLog(Move move){
 			List<LogEntry> newLog = new ArrayList<>(log);
 
@@ -346,7 +350,7 @@ public final class MyGameStateFactory implements Factory<GameState> {
 					for (Ticket ticket : move.tickets()) {
 
 						if (ticket == Ticket.DOUBLE) continue; //Double tickets do not include in log
-						if (isFirst) {
+						if (isFirst) { //Log the first move
 
 							if (setup.moves.get(log.size())) {
 								newLog.add(LogEntry.reveal(ticket, getMiddleDestination(move)));
@@ -355,7 +359,7 @@ public final class MyGameStateFactory implements Factory<GameState> {
 							}
 
 							isFirst = false;
-						} else {
+						} else { //Log the second move
 
 							if (setup.moves.get(log.size() + 1)) {
 								newLog.add(LogEntry.reveal(ticket, getDestination(move)));
@@ -381,6 +385,7 @@ public final class MyGameStateFactory implements Factory<GameState> {
 			this.log = ImmutableList.copyOf(newLog);
 		}
 
+		//Update the tickets have been used and should give
 		private void updateTickets(Move move){
 			ImmutableList<Ticket> tickets = getTickets(move);
 
@@ -398,6 +403,7 @@ public final class MyGameStateFactory implements Factory<GameState> {
 
 					for(Player detective : detectives){
 
+						//Take the used ticket away from detective and give it to mrx
 						if(detective.piece().equals(move.commencedBy())){
 							int indexOfDetective = detectives.indexOf(detective);
 							temp.set(indexOfDetective, detective.use(ticket));
@@ -409,6 +415,7 @@ public final class MyGameStateFactory implements Factory<GameState> {
 			}
 		}
 
+		//Update the player location after a move
 		private void updateLocation(Move move){
 			Integer destination = getDestination(move);
 
@@ -428,9 +435,10 @@ public final class MyGameStateFactory implements Factory<GameState> {
 			}
 		}
 
+		//Update the remaining(means who is/are the next need to move, go to next round(detectives round/ mrx round))
 		private void updateRemaining(Move move){
 			List<Piece> newRemaining;
-			List<Piece> remainingList = new ArrayList<>(remaining);
+			List<Piece> remainingList = new ArrayList<>(remaining); //Get the player who need to move
 			Piece currentPlayer = move.commencedBy();
 			List<Piece> detectivePieces = new ArrayList<>();
 			for(Player d : detectives){
@@ -460,6 +468,7 @@ public final class MyGameStateFactory implements Factory<GameState> {
 			this.remaining = ImmutableSet.copyOf(newRemaining);
 		}
 
+		//Check the move was delivered in is double move, by using visitor
 		private boolean isDoubleMove(Move move){
 			return move.accept(new Visitor<>() {
 				@Override
