@@ -242,7 +242,7 @@ public final class MyGameStateFactory implements Factory<GameState> {
 			Set<DoubleMove> doubleMoves = new HashSet<>();
 			ImmutableSet<SingleMove> firstSingleMove = makeSingleMoves(setup, detectives, player, source);
 
-			//Make once double move can be thought as make twice single move
+			//Make once double move can be thought as make two single move
 			if(player.has(Ticket.DOUBLE) && this.setup.moves.size() > 1){
 
 					for(SingleMove move1 : firstSingleMove){
